@@ -39,13 +39,13 @@ jobs:
     outputs:
       versionout: "${{ steps.versionexport.outputs.version }}"
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
+      # - name: Maximize build space
+      #   uses: easimon/maximize-build-space@master
+      #   with:
+      #     remove-dotnet: 'true'
+      #     remove-android: 'true'
+      #     remove-haskell: 'true'
+      #     remove-codeql: 'true'
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
