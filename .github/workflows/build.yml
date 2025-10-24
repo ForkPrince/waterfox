@@ -39,6 +39,14 @@ jobs:
     outputs:
       versionout: "${{ steps.versionexport.outputs.version }}"
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
       - name: "\U0001F4BF Build dependencies"
@@ -58,7 +66,7 @@ jobs:
       - name: "\U0001F4E3 Override version_display.txt"
         if: ${{ inputs.TRIGGER_EVENT == 'workflow_dispatch' }}
         run: |
-          if [[ -n ${{ inputs.TAG_VERSION }} ]]; then
+          if [[ -n "${{ inputs.TAG_VERSION }}" ]]; then
             echo ${{ inputs.TAG_VERSION }} > browser/config/version_display.txt
           fi
           echo 'VERSION_DISPLAY<<EOF' >> $GITHUB_ENV
@@ -69,8 +77,8 @@ jobs:
         run: echo "version=$(echo ${{ env.VERSION_DISPLAY }})" >> $GITHUB_OUTPUT
       - name: "\U0001F3D7 Build"
         run: |
-          if [[ ${{ inputs.TRIGGER_EVENT }} == 'workflow_dispatch' ]]; then
-            if [[ $PRE_RELEASE == 'true' ]]; then
+          if [[ "${{ inputs.TRIGGER_EVENT }}" == 'workflow_dispatch' ]]; then
+            if [[ "$PRE_RELEASE" == 'true' ]]; then
               export WFX_PRE_RELEASE=1
               echo "Set WFX_PRE_RELEASE as ${WFX_PRE_RELEASE}"
               echo "WFX_RELEASE should be 0. ${WFX_RELEASE}"
