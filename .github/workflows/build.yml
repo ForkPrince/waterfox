@@ -19,16 +19,20 @@ name: Build
       versiondisplay:
         description: Output display version
         value: "${{ jobs.build-windows-arm64.outputs.versionout }}"
+
 env:
   MOZ_BUILD_DATE: "${{ inputs.MOZ_BUILD_DATE }}"
   PRE_RELEASE: "${{ inputs.PRE_RELEASE }}"
+
 jobs:
   build-windows-arm64:
     name: Windows ARM64
     runs-on: ubuntu-latest
+
     concurrency:
       group: "${{ github.head_ref }}-windows-arm64"
       cancel-in-progress: true
+
     env:
       MOZCONFIG: .mozconfig-aarch64-pc-windows-msvc
       WINEDEBUG: "-all"
@@ -36,19 +40,24 @@ jobs:
       CARGO_INCREMENTAL: "0"
       CARGO_TERM_COLOR: always
       SCCACHE_GHA_ENABLED: "true"
+
     outputs:
       versionout: "${{ steps.versionexport.outputs.version }}"
-    steps:
-      # - name: Maximize build space
-      #   uses: easimon/maximize-build-space@master
-      #   with:
-      #     remove-dotnet: 'true'
-      #     remove-android: 'true'
-      #     remove-haskell: 'true'
-      #     remove-codeql: 'true'
 
+    steps:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: "\U0001F4E4 Checkout"
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Setup Disk & Swap Space 💿
+        run: |
+          chmod +x .github/workflows/disk_swap_for_github_runner.sh
+          .github/workflows/disk_swap_for_github_runner.sh
+
       - name: "\U0001F4BF Build dependencies"
         run: |
           sudo apt update
@@ -59,14 +68,15 @@ jobs:
           tar -xvf clang.tar.zst -C $HOME/.mozbuild
           curl -L "https://www.7-zip.org/a/7z2408-linux-x64.tar.xz" | tar xJ
           sudo mv 7zz /usr/local/bin/7z
-      - name: "\U0001F4E4 Checkout"
-        uses: actions/checkout@v4
-        with:
-          submodules: 'true'
+
       - name: "🔧 Fix line endings"
         run: |
           sudo apt-get install -y dos2unix
           dos2unix .mozconfig-aarch64-pc-windows-msvc
+
+      - name: "🔧 Disable dotprod features"
+        run: rm -f media/libvpx/libvpx/vpx_dsp/arm/sad4d_neon_dotprod.c || true
+
       - name: "\U0001F4E3 Override version_display.txt"
         if: ${{ inputs.TRIGGER_EVENT == 'workflow_dispatch' }}
         run: |
@@ -76,9 +86,11 @@ jobs:
           echo 'VERSION_DISPLAY<<EOF' >> $GITHUB_ENV
           cat browser/config/version_display.txt >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
+
       - name: "\U0001F4E3 Export VERSION_DISPLAY"
         id: versionexport
         run: echo "version=$(echo ${{ env.VERSION_DISPLAY }})" >> $GITHUB_OUTPUT
+
       - name: "\U0001F3D7 Build"
         run: |
           if [[ "${{ inputs.TRIGGER_EVENT }}" == 'workflow_dispatch' ]]; then
@@ -93,6 +105,7 @@ jobs:
             fi
           fi
           ./mach build
+
       - name: "\U0001F4E6 Package"
         if: ${{ inputs.TRIGGER_EVENT == 'workflow_dispatch' }}
         run: |
@@ -100,6 +113,7 @@ jobs:
           if [ -d "$PWD"/waterfox/browser/locales/en-GB ]; then
             ./mach package-multi-locale --locales ar cs da de el en-GB en-US es-ES es-MX fr hu id it ja ko lt nl nn-NO pl pt-BR pt-PT ru sv-SE th vi zh-CN zh-TW
           fi
+
       - name: "\U0001F199 Upload artifact"
         if: ${{ inputs.TRIGGER_EVENT == 'workflow_dispatch' }}
         uses: actions/upload-artifact@v4
