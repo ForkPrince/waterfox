@@ -53,10 +53,10 @@ jobs:
         with:
           submodules: 'true'
 
-      - name: Setup Disk & Swap Space 💿
-        run: |
-          chmod +x .github/disk_swap_for_github_runner.sh
-          .github/disk_swap_for_github_runner.sh
+      # - name: Setup Disk & Swap Space 💿
+      #   run: |
+      #     chmod +x .github/disk_swap_for_github_runner.sh
+      #     .github/disk_swap_for_github_runner.sh
 
       - name: "\U0001F4BF Build dependencies"
         run: |
